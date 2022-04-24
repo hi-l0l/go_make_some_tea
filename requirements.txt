@@ -1,3 +1,5 @@
 alive-progress==2.4.1
+aiohttp==3.8.1
+anyio==3.5.0
 requests==2.27.1
 simplejson==3.17.6
