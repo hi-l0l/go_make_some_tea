@@ -1,9 +1,10 @@
 import json
 import requests
 from alive_progress import alive_bar
-from requests_futures.sessions import FuturesSession
+import aiohttp
+import asyncio
 
-with open('config.json') as f:
+with open('config_socks4.json') as f:
     proxy_providers = json.load(f)
 
 
@@ -37,47 +38,77 @@ def get_proxy():
                     http_list = r.text.split("\n")
             bar()
 
-def check_proxy(ip, protocol,session):
 
+
+
+'''
+def check_proxy(ip, protocol):
     try:
         proxy = f"{protocol}://{ip}"
-        session.get("https://1.1.1.1/", proxies = {"https": proxy}, timeout = 3)
-    except:
+        requests.get("https://1.1.1.1/", proxies = {"https": proxy}, timeout = 3)
+    except Exception as x:
         return False
     return True
+'''
+
+
+async def check_proxy(ip, protocol):
+    async with aiohttp.ClientSession() as session:
+
+        proxy = f"{protocol}://{ip}"
+        try:
+            async with session.get("https://1.1.1.1/", proxy = proxy, timeout=2) as response:
+                resp = await response.status
+                print(resp)
+                return True
+        except Exception as x:
+            return False
+
 
 
 
 def check(socks4_list, socks5_list, http_list):
     _all = list()
-    session = FuturesSession(max_workers=3)
-
+        
     print("Check SOCKS4 -->")
-#    with alive_bar(len(socks4_list)) as bar:
-    for ip_and_port in socks4_list:
-        print(f"socks4://{ip_and_port}")
-        if check_proxy(ip_and_port, "socks4",session):
-            print(f"{colors.purple}socks4://{ip_and_port}{colors.white}")
-            _all.append(f"socks4://{ip_and_port}")
-#            bar()
+    with alive_bar(len(socks4_list)) as bar:
+
+        for ip_and_port in socks4_list:
+            print(f"socks4://{ip_and_port}")
+
+            if asyncio.run(check_proxy(ip_and_port, "socks4")) == True:
+                print(f"{colors.purple}socks4://{ip_and_port}{colors.white}")
+                _all.append(f"socks4://{ip_and_port}")
+
+            bar()
+
+
 
     print("Check SOCKS5 -->")
-#    with alive_bar(len(socks5_list)) as bar:
-    for ip_and_port in socks5_list:
-        print(f"socks5://{ip_and_port}")
-        if check_proxy(ip_and_port, "socks5",session):
-            print(f"{colors.purple}socks5://{ip_and_port}{colors.white}")
-            _all.append(f"socks5://{ip_and_port}")
-#            bar()
+    with alive_bar(len(socks5_list)) as bar:
+
+        for ip_and_port in socks5_list:
+            print(f"socks5://{ip_and_port}")
+
+            if asyncio.run(check_proxy(ip_and_port, "socks5")) == True:
+                print(f"{colors.purple}socks5://{ip_and_port}{colors.white}")
+                _all.append(f"socks5://{ip_and_port}")
+
+            bar()
+
+
 
     print("Check HTTP -->")
-#    with alive_bar(len(http_list)) as bar:
-    for ip_and_port in http_list:
-        print(f"http://{ip_and_port}")
-        if check_proxy(ip_and_port, "http",session):
-            print(f"{colors.purple}http://{ip_and_port}{colors.white}")
-            _all.append(f"http://{ip_and_port}")
-#            bar()
+    with alive_bar(len(http_list)) as bar:
+
+        for ip_and_port in http_list:
+            print(f"http://{ip_and_port}")
+
+            if check_proxy(ip_and_port, "http") == True:
+                print(f"{colors.purple}http://{ip_and_port}{colors.white}")
+                _all.append(f"http://{ip_and_port}")
+
+            bar()
 
     return _all
 
@@ -85,11 +116,9 @@ if __name__=='__main__':
     get_proxy()
     all_pr = check(socks4_list, socks5_list, http_list)
 
-
     with open('parsed_proxies.txt', 'w') as wr:
         for string in all_pr:
             wr.write(string+"\n")
-  
 
     answer = input(f"""{colors.blue}
     DONE!\n   {colors.white}
