@@ -40,18 +40,6 @@ def get_proxy():
 
 
 
-
-'''
-def check_proxy(ip, protocol):
-    try:
-        proxy = f"{protocol}://{ip}"
-        requests.get("https://1.1.1.1/", proxies = {"https": proxy}, timeout = 3)
-    except Exception as x:
-        return False
-    return True
-'''
-
-
 async def check_proxy(ip, protocol):
     async with aiohttp.ClientSession() as session:
 
