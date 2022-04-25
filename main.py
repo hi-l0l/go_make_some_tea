@@ -2,8 +2,10 @@ import json
 import requests
 from alive_progress import alive_bar
 from banner import banner
+from banner import help_banner
+import sys
 
-with open('config.json') as f:
+with open('config_socks4.json') as f:
     proxy_providers = json.load(f)
 
 
@@ -77,16 +79,42 @@ def check():
                 lists._all.append(f"http://{ip_and_port}")
             bar()
 
+def write_file(file_name, _all):
+    with open(file_name, 'w') as wr:
+        for string in _all:
+            wr.write(string+"\n")
+
 
 if __name__=='__main__':
+    if ('-h' or '--help') in sys.argv:
+        help_banner()
+        sys.exit()
+
     banner()
     get_proxy()
     check()
-    all_pr = lists._all
 
-    with open('parsed_proxies.txt', 'w') as wr:
-        for string in all_pr:
-            wr.write(string+"\n")
+
+
+    if ('-o' or '--output') in sys.argv:
+        index_file_name = sys.argv.index("-o")+1
+        file_name = sys.argv[index_file_name]
+
+
+    if ('-p' or '--proxychains') in sys.argv:
+        for i in lists._all:
+            protocol = i.split("://")[0]
+            ip = i.split("://")[1].split(":")[0]
+            port = i.split("://")[1].split(":")[1]
+            pr_ip_port = f"{protocol}  {ip} {port}"
+            prchains.append(pr_ip_port)
+
+            write_file(file_name, prchains)
+    else:
+        file_name = 'parsed_proxies.txt'
+        write_file(file_name, lists._all)
+
+
 
     answer = input(f"""{colors.blue}
     DONE!\n   {colors.white}
@@ -94,6 +122,7 @@ if __name__=='__main__':
     Show? Y/n {colors.blue}
     """)
     print(colors.white)
+
     if answer.lower() == "y" or "yes" or '':
-        for string in all_pr:
+        for string in lists._all:
             print(string)
