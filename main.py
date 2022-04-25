@@ -1,27 +1,28 @@
 import json
 import requests
 from alive_progress import alive_bar
-
+from banner import banner
 
 with open('config.json') as f:
     proxy_providers = json.load(f)
 
 
 class colors:
-    red='\033[31m'
     blue='\033[34m'
     purple='\033[35m'
     white= '\033[37m'
 
+class lists:
+    socks4 = list()
+    socks5 = list()
+    http = list()
+    _all = list()
+
 
 def get_proxy():
-    global socks4_list
-    global socks5_list
-    global http_list
-    socks4_list = socks5_list = http_list = list()
     total = len(proxy_providers["proxy-providers"])
 
-    print("Getting proxy -->   ")
+    print(f"{colors.blue}Getting proxy -->{colors.white}")
     with alive_bar(total) as bar:
         for i in range(len(proxy_providers["proxy-providers"])):
             try:
@@ -29,59 +30,59 @@ def get_proxy():
             except:
                 pass
             match proxy_providers["proxy-providers"][i]['type']:
-                case 5: #socks5
-                    socks5_list = r.text.split("\n")
-                case 4: #socks4
-                    socks4_list = r.text.split("\n")
-                case 1: #http
-                    http_list = r.text.split("\n")
+                case 5:
+                    lists.socks5 = r.text.split("\n")
+                case 4:
+                    lists.socks4 = r.text.split("\n")
+                case 1:
+                    lists.http = r.text.split("\n")
             bar()
 
 def check_proxy(ip, protocol):
     try:
         proxy = f"{protocol}://{ip}"
-        requests.get("https://1.1.1.1/", proxies = {"https": proxy}, timeout = 3)
-    except Exception as x:
+        requests.get("https://1.1.1.1/", proxies = {"https": proxy}, timeout = 2)
+    except Exception as e:
         return False
     return True
+    
 
 
 
-def check(socks4_list, socks5_list, http_list):
-    _all = list()
-        
-    print("Check SOCKS4 -->")
-    with alive_bar(len(socks4_list)) as bar:
-        for ip_and_port in socks4_list:
+def check():
+    print(f"{colors.blue}Check SOCKS4 -->{colors.white}")
+    with alive_bar(len(lists.socks4)) as bar:
+        for ip_and_port in lists.socks4:
             print(f"socks4://{ip_and_port}")
             if check_proxy(ip_and_port, "socks4") == True:
                 print(f"{colors.purple}socks4://{ip_and_port}{colors.white}")
-                _all.append(f"socks4://{ip_and_port}")
+                lists._all.append(f"socks4://{ip_and_port}")
             bar()
 
-    print("Check SOCKS5 -->")
-    with alive_bar(len(socks5_list)) as bar:
-        for ip_and_port in socks5_list:
+    print(f"{colors.blue}Check SOCKS5 -->{colors.white}")
+    with alive_bar(len(lists.socks5)) as bar:
+        for ip_and_port in lists.socks5:
             print(f"socks5://{ip_and_port}")
             if check_proxy(ip_and_port, "socks5") == True:
                 print(f"{colors.purple}socks5://{ip_and_port}{colors.white}")
-                _all.append(f"socks5://{ip_and_port}")
+                lists._all.append(f"socks5://{ip_and_port}")
             bar()
 
-    print("Check HTTP -->")
-    with alive_bar(len(http_list)) as bar:
-        for ip_and_port in http_list:
+    print(f"{colors.blue}Check HTTP -->{colors.white}")
+    with alive_bar(len(lists.http)) as bar:
+        for ip_and_port in lists.http:
             print(f"http://{ip_and_port}")
             if check_proxy(ip_and_port, "http") == True:
                 print(f"{colors.purple}http://{ip_and_port}{colors.white}")
-                _all.append(f"http://{ip_and_port}")
+                lists._all.append(f"http://{ip_and_port}")
             bar()
 
-    return _all
 
 if __name__=='__main__':
+    banner()
     get_proxy()
-    all_pr = check(socks4_list, socks5_list, http_list)
+    check()
+    all_pr = lists._all
 
     with open('parsed_proxies.txt', 'w') as wr:
         for string in all_pr:
@@ -90,10 +91,9 @@ if __name__=='__main__':
     answer = input(f"""{colors.blue}
     DONE!\n   {colors.white}
     Output data write in ./parsed_proxies.txt\n
-    Show? y/N {colors.blue}
+    Show? Y/n {colors.blue}
     """)
     print(colors.white)
-    if answer.lower() == "y" or "yes":
+    if answer.lower() == "y" or "yes" or '':
         for string in all_pr:
             print(string)
-            
